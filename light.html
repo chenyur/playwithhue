@@ -11,22 +11,83 @@
 
 <button type="button" onclick="loadLight(true)">Change!</button>
 <button type="button" onclick="loadLight(false)">Stop!</button>
+<button type="button" onclick="loadListen(true)">Listen!</button>
 <button type="button" onclick="loadMagic()">MAGIC!</button>
 <button type="button" onclick="loadDark()">Off!</button>
  
   <script>
+
+  	function loadListen(s) {
+  		var currentVolume =0;
+	  //Audio code from https://codepen.io/travisholliday/pen/gyaJk?editors=1111
+
+	  navigator.getUserMedia = navigator.getUserMedia ||
+	  navigator.webkitGetUserMedia ||
+	  navigator.mozGetUserMedia;
+	  if (navigator.getUserMedia) {
+	  	navigator.getUserMedia({
+	  		audio: true
+	  	},
+	  	function(stream) {
+	  		audioContext = new AudioContext();
+	  		analyser = audioContext.createAnalyser();
+	  		microphone = audioContext.createMediaStreamSource(stream);
+	  		javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+
+	  		analyser.smoothingTimeConstant = 0.8;
+	  		analyser.fftSize = 1024;
+
+	  		microphone.connect(analyser);
+	  		analyser.connect(javascriptNode);
+	  		javascriptNode.connect(audioContext.destination);
+
+	  		javascriptNode.onaudioprocess = function() {
+	  			var array = new Uint8Array(analyser.frequencyBinCount);
+	  			analyser.getByteFrequencyData(array);
+	  			var values = 0;
+
+	  			var length = array.length;
+	  			for (var i = 0; i < length; i++) {
+	  				values += (array[i]);
+	  			}
+
+	  			var average = values / length;
+
+		//          console.log(Math.round(average - 40));
+
+		currentVolume = Math.round(Math.min(254, Math.max(1, average/64*253))); 	//use 64 for max brightness, making sure it's not out of bounds for bri (1-254) per hue API
+
+		        } // end fn stream
+		    },
+		    function(err) {
+		    	console.log("The following error occured: " + err.name)
+		    });
+	  } else {
+	  	console.log("getUserMedia not supported");
+	  }
+
+	  //send colume to light
+		listenInt = setInterval(() => {
+		  console.log('changing to '+ currentVolume);
+		  var xhr = new XMLHttpRequest();
+		  xhr.open('PUT', "http://192.168.1.153/api/zORywYzOzLvpRvzIocACSIXt29dTls2Viqaxnc9R/lights/1/state", true);
+		  xhr.send(JSON.stringify({"bri":currentVolume, "transitiontime": 1}));
+		}, 200);
+	}
+
+
   function loadLight(s) {
  	console.log("so it begins");
  	var xhr = new XMLHttpRequest();
  	//xhr.open('GET', "http://192.168.1.153/api/zORywYzOzLvpRvzIocACSIXt29dTls2Viqaxnc9R/lights/1", true);
  	//xhr.send();
  	//console.log(xhr.responseText);
- 	xhr.open('PUT', "http://192.168.1.153/api/zORywYzOzLvpRvzIocACSIXt29dTls2Viqaxnc9R/lights/1/state", true);
+ 	xhr.open('PUT', "http://192.168.1.153/api/zORywYzOzLvpRvzIocACSIXt29dTls2Viqaxnc9R/lights/1/state", true); //userID for hue bridge, hardcoded :(
  	xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
  	var val = Math.floor((Math.random() * 65535) + 1); 
  	xhr.send(JSON.stringify({"bri":255, "transitiontime": 0, "hue": val, "on": true}));
 	console.log(xhr.responseText);
- 	xhr.addEventListener("loadend", loadEnd);
+ 	//xhr.addEventListener("loadend", loadEnd);
  	if (s==true) this.timeoutID = setTimeout(() => loadLight(true), 50);
  	else window.clearTimeout(this.timeoutID);
  	
