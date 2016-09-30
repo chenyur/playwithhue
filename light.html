@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+ 
+<head>
+  <title>Let's Dance</title>
+</head>
+ 
+<body>
+
+<h2>Dancing Lights</h2>
+
+<button type="button" onclick="loadLight(true)">Change!</button>
+<button type="button" onclick="loadLight(false)">Stop!</button>
+<button type="button" onclick="loadMagic()">MAGIC!</button>
+<button type="button" onclick="loadDark()">Off!</button>
+ 
+  <script>
+  function loadLight(s) {
+ 	console.log("so it begins");
+ 	var xhr = new XMLHttpRequest();
+ 	//xhr.open('GET', "http://192.168.1.153/api/zORywYzOzLvpRvzIocACSIXt29dTls2Viqaxnc9R/lights/1", true);
+ 	//xhr.send();
+ 	//console.log(xhr.responseText);
+ 	xhr.open('PUT', "http://192.168.1.153/api/zORywYzOzLvpRvzIocACSIXt29dTls2Viqaxnc9R/lights/1/state", true);
+ 	xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+ 	var val = Math.floor((Math.random() * 65535) + 1); 
+ 	xhr.send(JSON.stringify({"bri":255, "transitiontime": 0, "hue": val, "on": true}));
+	console.log(xhr.responseText);
+ 	xhr.addEventListener("loadend", loadEnd);
+ 	if (s==true) this.timeoutID = setTimeout(() => loadLight(true), 50);
+ 	else window.clearTimeout(this.timeoutID);
+ 	
+
+function loadEnd(e) {
+  //console.log("The transfer finished (although we don't know if it succeeded or not).");
+  console.log(xhr.responseText);
+}
+ }
+ function loadDark() {
+ 	console.log("so it blacks");
+	var xhr = new XMLHttpRequest();
+	xhr.open('PUT', "http://192.168.1.153/api/zORywYzOzLvpRvzIocACSIXt29dTls2Viqaxnc9R/lights/1/state", true);
+	xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+	xhr.send(JSON.stringify({"on": false}));
+ }
+
+ function loadMagic() {
+ 	var xhr = new XMLHttpRequest();
+ 	xhr.open('PUT', "http://192.168.1.153/api/zORywYzOzLvpRvzIocACSIXt29dTls2Viqaxnc9R/lights/1/state", true);
+ 	xhr.send(JSON.stringify({"bri":255, "transitiontime": 0, "hue": 26365, "on": true}));
+ }
+
+
+  </script>
+</body>
+ 
+</html>
